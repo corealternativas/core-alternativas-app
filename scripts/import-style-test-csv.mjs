@@ -193,7 +193,7 @@ const INSERT_SQL = `
     $14, $15, $16::jsonb,
     'notion-import', $17, COALESCE($17, now()), true
   )
-  ON CONFLICT ON CONSTRAINT uniq_style_test_email_submitted_at DO NOTHING
+  ON CONFLICT (email, submitted_at) WHERE email IS NOT NULL AND submitted_at IS NOT NULL DO NOTHING
 `
 
 let inserted = 0
