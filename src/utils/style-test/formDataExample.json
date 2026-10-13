@@ -1,0 +1,23 @@
+{
+  "nombre": "María",
+  "apellido": "García López",
+  "email": "maria.garcia@example.com",
+  "caracteristicas": "Natural, relajada, que transmita confianza y autenticidad. Me gustaría que me vean como alguien cómoda con su estilo.",
+  "personalidad": [
+    "Natural",
+    "Relajada/o/e",
+    "Casual",
+    "Moderna/o/e",
+    "Simple",
+    "Deportiva/o/e",
+    "Informal",
+    "Activa/o/e",
+    "Elegante"
+  ],
+  "ajuste": "suelta",
+  "tiempo": "15min",
+  "genero": "mujer",
+  "ubicacion": "Argentina",
+  "comunicaciones": true,
+  "procesamiento": true
+}
