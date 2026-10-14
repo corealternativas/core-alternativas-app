@@ -8,6 +8,7 @@ import authRouter from './routes/auth.js'
 import usersRouter from './routes/users.js'
 import calculationsRouter from './routes/calculations.js'
 import adminCalculationsRouter from './routes/admin-calculations.js'
+import adminStyleTestRouter from './routes/admin-style-test.js'
 import styleTestRouter from './routes/style-test.js'
 
 const __filename = fileURLToPath(import.meta.url)
@@ -25,6 +26,7 @@ app.get('/api/health', (_req, res) => {
 app.use('/api/auth', authRouter)
 app.use('/api/admin/users', usersRouter)
 app.use('/api/admin/calculations', adminCalculationsRouter)
+app.use('/api/admin/style-test', adminStyleTestRouter)
 app.use('/api/calculations', calculationsRouter)
 app.use('/api/style-test', styleTestRouter)
 

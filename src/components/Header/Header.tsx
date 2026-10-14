@@ -10,10 +10,15 @@ import {
   StyledTitle,
   StyledNav,
   StyledNavLink,
-  StyledLogoutButton,
-  StyledUserInfo,
+  StyledNavDivider,
+  StyledProfile,
+  StyledProfileButton,
+  StyledProfileAvatar,
+  StyledProfileName,
+  StyledProfileChevron,
+  StyledProfileMenu,
+  StyledProfileItem,
   StyledTitleWrapper,
-  StyledLinkButton,
   StyledFlash,
   StyledMenuButton,
   StyledMobileMenu,
@@ -42,6 +47,79 @@ const MenuIcon: React.FC<{ open: boolean }> = ({ open }) => (
     )}
   </svg>
 )
+
+interface ProfileMenuProps {
+  name: string
+  onChangePassword: () => void
+  onLogout: () => void
+}
+
+// Desktop-only user menu: pill trigger + popover with account actions.
+const ProfileMenu: React.FC<ProfileMenuProps> = ({ name, onChangePassword, onLogout }) => {
+  const [open, setOpen] = useState(false)
+  const wrapperRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onMouseDown = (e: MouseEvent) => {
+      if (!wrapperRef.current?.contains(e.target as Node)) setOpen(false)
+    }
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setOpen(false)
+    }
+    window.addEventListener("mousedown", onMouseDown)
+    window.addEventListener("keydown", onKey)
+    return () => {
+      window.removeEventListener("mousedown", onMouseDown)
+      window.removeEventListener("keydown", onKey)
+    }
+  }, [open])
+
+  const pick = (action: () => void) => () => {
+    setOpen(false)
+    action()
+  }
+
+  const initial = (name.trim().charAt(0) || "?").toUpperCase()
+
+  return (
+    <StyledProfile ref={wrapperRef}>
+      <StyledProfileButton
+        type="button"
+        aria-haspopup="menu"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <StyledProfileAvatar aria-hidden="true">{initial}</StyledProfileAvatar>
+        <StyledProfileName>{name}</StyledProfileName>
+        <StyledProfileChevron
+          $open={open}
+          width="14"
+          height="14"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden="true"
+        >
+          <polyline points="6 9 12 15 18 9" />
+        </StyledProfileChevron>
+      </StyledProfileButton>
+      {open && (
+        <StyledProfileMenu role="menu">
+          <StyledProfileItem type="button" role="menuitem" onClick={pick(onChangePassword)}>
+            Cambiar contraseña
+          </StyledProfileItem>
+          <StyledProfileItem type="button" role="menuitem" onClick={pick(onLogout)}>
+            Cerrar sesión
+          </StyledProfileItem>
+        </StyledProfileMenu>
+      )}
+    </StyledProfile>
+  )
+}
 
 export const Header: React.FC<HeaderProps> = ({
   title = "Calculadora semana de uso de ropa",
@@ -113,14 +191,16 @@ export const Header: React.FC<HeaderProps> = ({
               {user.role === "admin" && (
                 <>
                   <StyledNavLink to="/admin/results">Resultados</StyledNavLink>
+                  <StyledNavLink to="/admin/style-test">Style test results</StyledNavLink>
                   <StyledNavLink to="/admin/users">Usuarios</StyledNavLink>
                 </>
               )}
-              <StyledUserInfo>{user.name || user.email}</StyledUserInfo>
-              <StyledLinkButton type="button" onClick={() => setChangePwOpen(true)}>
-                Cambiar contraseña
-              </StyledLinkButton>
-              <StyledLogoutButton onClick={handleLogout}>Cerrar sesión</StyledLogoutButton>
+              <StyledNavDivider aria-hidden="true" />
+              <ProfileMenu
+                name={user.name || user.email}
+                onChangePassword={() => setChangePwOpen(true)}
+                onLogout={handleLogout}
+              />
             </StyledNav>
 
             <StyledMenuButton
@@ -144,6 +224,9 @@ export const Header: React.FC<HeaderProps> = ({
               <>
                 <StyledMobileItem as={Link} to="/admin/results" role="menuitem">
                   Resultados
+                </StyledMobileItem>
+                <StyledMobileItem as={Link} to="/admin/style-test" role="menuitem">
+                  Style test results
                 </StyledMobileItem>
                 <StyledMobileItem as={Link} to="/admin/users" role="menuitem">
                   Usuarios

@@ -10,6 +10,7 @@ import { Login } from "./pages/Login"
 import { Calculator } from "./pages/Calculator"
 import { Admin } from "./pages/Admin"
 import { AdminResults } from "./pages/AdminResults"
+import { AdminStyleTest } from "./pages/AdminStyleTest"
 import { StyleTest } from "./pages/StyleTest"
 import { StyledLayout, StyledMain } from "./App.style"
 
@@ -68,6 +69,17 @@ function App() {
               <AppLayout>
                 <AdminRoute>
                   <AdminResults />
+                </AdminRoute>
+              </AppLayout>
+            }
+          />
+
+          <Route
+            path="/admin/style-test"
+            element={
+              <AppLayout>
+                <AdminRoute>
+                  <AdminStyleTest />
                 </AdminRoute>
               </AppLayout>
             }

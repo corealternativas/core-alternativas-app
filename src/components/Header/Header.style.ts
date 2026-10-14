@@ -1,5 +1,5 @@
 import styled from "styled-components"
-import { Link } from "react-router-dom"
+import { NavLink } from "react-router-dom"
 
 export const StyledHeader = styled.header`
   background-color: ${({ theme }) => theme.colors.white};
@@ -78,59 +78,156 @@ export const StyledTitle = styled.h1`
 
 export const StyledNav = styled.nav`
   display: flex;
-  align-items: center;
-  gap: ${({ theme }) => theme.spacing.md};
+  align-items: stretch;
+  align-self: stretch;
+  gap: 4px;
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
     display: none;
   }
 `
 
-export const StyledNavLink = styled(Link)`
-  color: ${({ theme }) => theme.colors.primary};
+export const StyledNavLink = styled(NavLink)`
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  color: ${({ theme }) => theme.colors.textSecondary};
   text-decoration: none;
   font-size: 0.9rem;
   font-weight: 500;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: background-color 0.15s ease, color 0.15s ease;
 
   &:hover {
-    text-decoration: underline;
+    background-color: var(--surface-soft);
+    color: ${({ theme }) => theme.colors.text};
+  }
+
+  &.active {
+    color: ${({ theme }) => theme.colors.primary};
+    background-color: ${({ theme }) => theme.colors.secondary};
+  }
+
+  /* Accent bar glued to the header's bottom border. The nav + link stretch to
+     fill the content-area height, and this bar extends past the header's
+     vertical padding (theme.spacing.md) by 1px so it overlaps the border. */
+  &.active::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: calc(-1 * ${({ theme }) => theme.spacing.md} - 1px);
+    height: 3px;
+    background-color: ${({ theme }) => theme.colors.primary};
+    border-radius: 2px 2px 0 0;
   }
 `
 
-export const StyledUserInfo = styled.span`
-  font-size: 0.85rem;
-  color: ${({ theme }) => theme.colors.textSecondary};
-
-  @media (max-width: ${({ theme }) => theme.breakpoints.mobile}) {
-    display: none;
-  }
+export const StyledNavDivider = styled.span`
+  width: 1px;
+  height: 24px;
+  background-color: ${({ theme }) => theme.colors.border};
+  margin: 0 ${({ theme }) => theme.spacing.xs};
 `
 
-export const StyledLogoutButton = styled.button`
-  background-color: transparent;
+export const StyledProfile = styled.div`
+  position: relative;
+  display: inline-flex;
+`
+
+export const StyledProfileButton = styled.button`
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px 6px 6px;
   border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 999px;
+  background-color: ${({ theme }) => theme.colors.white};
   color: ${({ theme }) => theme.colors.text};
-  padding: 0.4rem 0.9rem;
-  border-radius: ${({ theme }) => theme.borderRadius.md};
-  font-size: 0.85rem;
+  font-family: inherit;
   cursor: pointer;
   transition: background-color 0.15s ease;
 
-  &:hover {
-    background-color: ${({ theme }) => theme.colors.surface};
+  &:hover,
+  &[aria-expanded="true"] {
+    background-color: var(--surface-soft);
+  }
+
+  &:focus-visible {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: var(--focus-ring);
   }
 `
 
-export const StyledLinkButton = styled.button`
-  background: none;
-  border: none;
-  color: ${({ theme }) => theme.colors.primary};
-  font-size: 0.85rem;
-  cursor: pointer;
-  padding: 0.4rem 0.4rem;
+export const StyledProfileAvatar = styled.span`
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background-color: ${({ theme }) => theme.colors.primary};
+  color: ${({ theme }) => theme.colors.white};
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 11px;
+  flex-shrink: 0;
+`
 
-  &:hover {
-    text-decoration: underline;
+export const StyledProfileName = styled.span`
+  font-size: 13px;
+  font-weight: 500;
+  max-width: 180px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`
+
+export const StyledProfileChevron = styled.svg<{ $open?: boolean }>`
+  color: var(--text-muted);
+  margin-left: 2px;
+  flex-shrink: 0;
+  transition: transform 0.15s ease;
+  transform: ${({ $open }) => ($open ? "rotate(180deg)" : "none")};
+`
+
+export const StyledProfileMenu = styled.div`
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  min-width: 190px;
+  padding: 4px;
+  background-color: ${({ theme }) => theme.colors.white};
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: ${({ theme }) => theme.borderRadius.md};
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.12);
+  z-index: 200;
+  animation: profileMenuIn 0.14s ease-out;
+
+  @keyframes profileMenuIn {
+    from { opacity: 0; transform: translateY(-4px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+`
+
+export const StyledProfileItem = styled.button`
+  display: block;
+  width: 100%;
+  padding: 8px 12px;
+  border: none;
+  border-radius: 6px;
+  background: none;
+  color: ${({ theme }) => theme.colors.text};
+  font-family: inherit;
+  font-size: 13.5px;
+  text-align: left;
+  cursor: pointer;
+
+  &:hover,
+  &:focus-visible {
+    background-color: var(--surface-soft);
+    outline: none;
   }
 `
 

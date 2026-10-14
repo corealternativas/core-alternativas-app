@@ -18,3 +18,37 @@ html, body, #root {
   height: 100%;
   width: 100%;
 }
+
+/* ───── Admin style-test tokens ─────
+   Values copied from the admin style-test mock. Colors that already exist in
+   src/theme.ts (primary, secondary, border, text...) are NOT repeated here.
+   The app is light-only, so no dark variants. */
+:root {
+  --surface-soft: #f8f3eb;
+  --border-strong: #d4cbba;
+  --text-muted: #8f8a81;
+  --accent-ink: #8f4a00;
+  --accent-soft: #fef2e0;
+  --success: #2f8c57;
+  --warn: #b8431a;
+  --focus-ring: 0 0 0 3px rgba(206, 107, 0, 0.25);
+
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  --backdrop-bg: rgba(10, 8, 4, 0.5);
+  --backdrop-blur: 4px;
+
+  --p0-bg: #ffe3c7; --p0-ink: #a85000;
+  --p1-bg: #fce0e0; --p1-ink: #9a2f2f;
+  --p2-bg: #e9ddf5; --p2-ink: #633897;
+  --p3-bg: #dde9f5; --p3-ink: #2d5a94;
+  --p4-bg: #d4ebe6; --p4-ink: #1b6555;
+  --p5-bg: #dcebd4; --p5-ink: #466f28;
+  --p6-bg: #f5ead4; --p6-ink: #7d5c15;
+  --p7-bg: #e8dcc8; --p7-ink: #614525;
+  --p8-bg: #f5dae8; --p8-ink: #7d335a;
+  --p9-bg: #e2e0dc; --p9-ink: #4a4740;
+
+  --chip-app-bg: #e6f4ea;    --chip-app-ink: #2f8c57;
+  --chip-notion-bg: #e8edf5; --chip-notion-ink: #4e6b9b;
+}
