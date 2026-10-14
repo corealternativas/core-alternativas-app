@@ -4,8 +4,9 @@ import { NavLink } from "react-router-dom"
 export const StyledHeader = styled.header`
   background-color: ${({ theme }) => theme.colors.white};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  /* No padding-bottom on desktop so the nav sits right on the separator. */
-  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.md} 0;
+  /* Symmetric 0.5rem padding top/bottom so the right section has breathing
+     room above the separator; horizontal padding kept at md on desktop. */
+  padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.md};
   display: flex;
   justify-content: center;
   align-items: stretch;
@@ -14,7 +15,7 @@ export const StyledHeader = styled.header`
   z-index: 100;
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
-    padding: 0.6rem ${({ theme }) => theme.spacing.sm};
+    padding: ${({ theme }) => theme.spacing.xs} ${({ theme }) => theme.spacing.sm};
     align-items: center;
   }
 `
