@@ -109,3 +109,34 @@ export const SortDescIcon: React.FC<IconProps> = (p) => (
     <polyline points="7 10 12 15 17 10" />
   </Svg>
 )
+
+export const ChevronUpIcon: React.FC<IconProps> = (p) => (
+  <Svg {...p}>
+    <polyline points="18 15 12 9 6 15" />
+  </Svg>
+)
+
+export const ChevronDownIcon: React.FC<IconProps> = (p) => (
+  <Svg {...p}>
+    <polyline points="6 9 12 15 18 9" />
+  </Svg>
+)
+
+// Six-dot drag handle (2 columns x 3 rows).
+export const GripIcon: React.FC<IconProps> = ({ size = 14 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="currentColor"
+    aria-hidden="true"
+    focusable="false"
+  >
+    <circle cx="9" cy="6" r="1.7" />
+    <circle cx="15" cy="6" r="1.7" />
+    <circle cx="9" cy="12" r="1.7" />
+    <circle cx="15" cy="12" r="1.7" />
+    <circle cx="9" cy="18" r="1.7" />
+    <circle cx="15" cy="18" r="1.7" />
+  </svg>
+)

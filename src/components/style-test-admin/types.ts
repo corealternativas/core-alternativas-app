@@ -31,3 +31,9 @@ export interface ColumnDef {
 }
 
 export type ColumnVisibility = Record<string, boolean>
+
+// Persisted column layout for the admin table: display order + visibility.
+export interface ColumnsConfig {
+  order: string[]
+  visible: ColumnVisibility
+}

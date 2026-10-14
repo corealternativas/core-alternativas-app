@@ -49,37 +49,32 @@ export const StyledLogoWrapper = styled.div`
 
   a {
     display: inline-flex;
+    border-radius: 4px;
+  }
+
+  a:focus {
+    outline: none;
+  }
+
+  a:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: 2px;
   }
 `
 
 export const StyledLogo = styled.img`
-  height: 100px;
+  height: 48px;
   width: auto;
   object-fit: contain;
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
-    height: 44px;
-  }
-`
-
-export const StyledTitle = styled.h1`
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: ${({ theme }) => theme.colors.text};
-  margin: 0;
-  min-width: 0;
-  overflow: hidden;
-
-  @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
-    font-size: 1rem;
-    line-height: 1.2;
+    height: 36px;
   }
 `
 
 export const StyledNav = styled.nav`
   display: flex;
-  align-items: stretch;
-  align-self: stretch;
+  align-items: center;
   gap: 4px;
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
@@ -88,7 +83,6 @@ export const StyledNav = styled.nav`
 `
 
 export const StyledNavLink = styled(NavLink)`
-  position: relative;
   display: inline-flex;
   align-items: center;
   color: ${({ theme }) => theme.colors.textSecondary};
@@ -109,18 +103,13 @@ export const StyledNavLink = styled(NavLink)`
     background-color: ${({ theme }) => theme.colors.secondary};
   }
 
-  /* Accent bar glued to the header's bottom border. The nav + link stretch to
-     fill the content-area height, and this bar extends past the header's
-     vertical padding (theme.spacing.md) by 1px so it overlaps the border. */
-  &.active::after {
-    content: "";
-    position: absolute;
-    left: 12px;
-    right: 12px;
-    bottom: calc(-1 * ${({ theme }) => theme.spacing.md} - 1px);
-    height: 3px;
-    background-color: ${({ theme }) => theme.colors.primary};
-    border-radius: 2px 2px 0 0;
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: 2px;
   }
 `
 
@@ -140,7 +129,7 @@ export const StyledProfileButton = styled.button`
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  padding: 6px 10px 6px 6px;
+  padding: 3px 10px 3px 3px;
   border: 1px solid ${({ theme }) => theme.colors.border};
   border-radius: 999px;
   background-color: ${({ theme }) => theme.colors.white};
@@ -154,10 +143,13 @@ export const StyledProfileButton = styled.button`
     background-color: var(--surface-soft);
   }
 
-  &:focus-visible {
+  &:focus {
     outline: none;
-    border-color: ${({ theme }) => theme.colors.primary};
-    box-shadow: var(--focus-ring);
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: 2px;
   }
 `
 
@@ -176,7 +168,7 @@ export const StyledProfileAvatar = styled.span`
 `
 
 export const StyledProfileName = styled.span`
-  font-size: 13px;
+  font-size: 0.875rem;
   font-weight: 500;
   max-width: 180px;
   overflow: hidden;
@@ -227,7 +219,15 @@ export const StyledProfileItem = styled.button`
   &:hover,
   &:focus-visible {
     background-color: var(--surface-soft);
+  }
+
+  &:focus {
     outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: -2px;
   }
 `
 
@@ -245,6 +245,15 @@ export const StyledMenuButton = styled.button`
 
   &:hover, &[aria-expanded="true"] {
     background-color: ${({ theme }) => theme.colors.surface};
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: 2px;
   }
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
@@ -308,9 +317,17 @@ export const StyledMobileItem = styled.a`
     border-bottom: none;
   }
 
-  &:hover, &:focus {
+  &:hover, &:focus-visible {
     background-color: ${({ theme }) => theme.colors.surface};
+  }
+
+  &:focus {
     outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: -2px;
   }
 `
 

@@ -198,4 +198,58 @@ router.post('/submit', async (req, res) => {
   })
 })
 
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+
+function toArray(v) {
+  return Array.isArray(v) ? v : []
+}
+
+// GET /api/style-test/results/:id
+// PUBLIC (no auth): the shareable page a client opens from the link the admin copies.
+// The UUID is the only access control, so the response is a strict whitelist of the
+// subject's own answers + results. Never add email, ip_location, place, source,
+// opt-ins, notion_* or email_message_id here.
+router.get('/results/:id', async (req, res) => {
+  // Keep this response out of search engines even if the UUID ever leaks.
+  res.setHeader('X-Robots-Tag', 'noindex, nofollow, noarchive')
+  const { id } = req.params
+  if (!UUID_RE.test(id)) {
+    return res.status(400).json({ error: 'invalid id' })
+  }
+
+  try {
+    const { rows } = await query(
+      `SELECT id, nombre, apellido, genero, ubicacion, personalidad,
+              caracteristicas, tiempo, fit, results, sugerencia,
+              submitted_at, created_at
+       FROM style_test_submissions
+       WHERE id = $1`,
+      [id]
+    )
+    const r = rows[0]
+    if (!r) {
+      return res.status(404).json({ error: 'not found' })
+    }
+
+    const when = r.submitted_at || r.created_at
+    return res.json({
+      id: r.id,
+      nombre: r.nombre,
+      apellido: r.apellido,
+      genero: r.genero,
+      ubicacion: r.ubicacion,
+      personalidad: toArray(r.personalidad),
+      caracteristicas: r.caracteristicas,
+      tiempo: r.tiempo,
+      fit: r.fit,
+      results: toArray(r.results),
+      sugerencia: r.sugerencia,
+      submittedAt: when ? new Date(when).toISOString() : null,
+    })
+  } catch (err) {
+    console.error('[style-test] RESULTS error:', err)
+    return res.status(500).json({ error: 'Internal server error' })
+  }
+})
+
 export default router

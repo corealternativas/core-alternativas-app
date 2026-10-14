@@ -17,6 +17,7 @@ import {
 import { formatDateTime, hasText } from "../components/style-test-admin/format"
 import type {
   ColumnDef,
+  ColumnsConfig,
   ColumnVisibility,
   StyleTestRow,
 } from "../components/style-test-admin/types"
@@ -50,6 +51,7 @@ import {
   PaginationPages,
   PageButton,
   Ellipsis,
+  STICKY_COL_WIDTH,
 } from "./AdminStyleTest.style"
 
 const COLS = [
@@ -72,7 +74,15 @@ const COLS = [
   { id: "source", label: "Origen", sortable: true },
 ] as const satisfies readonly ColumnDef[]
 
-const LS_KEY = "styleTestColsVisible_v2"
+// Column layout (order + visibility). The legacy key only stored the visibility map.
+const LS_KEY = "styleTestColsConfig_v1"
+const LEGACY_LS_KEY = "styleTestColsVisible_v2"
+
+const COLS_BY_ID: Record<string, ColumnDef> = Object.fromEntries(COLS.map((c) => [c.id, c]))
+const COL_IDS = new Set<string>(COLS.map((c) => c.id))
+
+// Columns pinned to the left edge while the table scrolls horizontally.
+const STICKY_IDS: readonly string[] = ["name", "lastname"]
 const PAGE_SIZES = [25, 50, 100] as const
 const SEARCH_DEBOUNCE_MS = 300
 
@@ -105,29 +115,62 @@ interface LoadedList {
   error: string | null
 }
 
-function defaultVisibility(): ColumnVisibility {
-  return Object.fromEntries(COLS.map((c) => [c.id, true]))
+function defaultConfig(): ColumnsConfig {
+  return {
+    order: COLS.map((c) => c.id),
+    visible: Object.fromEntries(COLS.map((c) => [c.id, true])),
+  }
 }
 
-function loadVisibility(): ColumnVisibility {
-  const result = defaultVisibility()
+function readStorage(key: string): unknown {
   try {
-    const stored: unknown = JSON.parse(localStorage.getItem(LS_KEY) || "null")
-    if (stored && typeof stored === "object") {
-      for (const c of COLS) {
-        const v = (stored as Record<string, unknown>)[c.id]
-        if (typeof v === "boolean") result[c.id] = v
-      }
-    }
+    return JSON.parse(localStorage.getItem(key) || "null")
   } catch {
-    /* ignore corrupt or unavailable storage */
+    return null // corrupt or unavailable storage
+  }
+}
+
+function pickVisibility(raw: unknown, base: ColumnVisibility): ColumnVisibility {
+  const result = { ...base }
+  if (raw && typeof raw === "object") {
+    for (const c of COLS) {
+      const v = (raw as Record<string, unknown>)[c.id]
+      if (typeof v === "boolean") result[c.id] = v
+    }
   }
   return result
 }
 
-function saveVisibility(v: ColumnVisibility) {
+// Keeps known ids only (no dupes). Columns missing from storage go last, in default order.
+function sanitizeOrder(raw: unknown): string[] {
+  const seen = new Set<string>()
+  const order: string[] = []
+  if (Array.isArray(raw)) {
+    for (const id of raw) {
+      if (typeof id === "string" && COL_IDS.has(id) && !seen.has(id)) {
+        seen.add(id)
+        order.push(id)
+      }
+    }
+  }
+  for (const c of COLS) if (!seen.has(c.id)) order.push(c.id)
+  return order
+}
+
+function loadColsConfig(): ColumnsConfig {
+  const base = defaultConfig()
+  const stored = readStorage(LS_KEY)
+  if (stored && typeof stored === "object") {
+    const { order, visible } = stored as { order?: unknown; visible?: unknown }
+    return { order: sanitizeOrder(order), visible: pickVisibility(visible, base.visible) }
+  }
+  // No new-format config yet: migrate the old visibility map, default order.
+  return { order: base.order, visible: pickVisibility(readStorage(LEGACY_LS_KEY), base.visible) }
+}
+
+function saveColsConfig(config: ColumnsConfig) {
   try {
-    localStorage.setItem(LS_KEY, JSON.stringify(v))
+    localStorage.setItem(LS_KEY, JSON.stringify(config))
   } catch {
     /* storage may be unavailable */
   }
@@ -153,6 +196,65 @@ const CheckCell: React.FC<{ yes: boolean }> = ({ yes }) => (
 
 const TextOrDash: React.FC<{ value: string | null }> = ({ value }) =>
   hasText(value) ? <>{value}</> : <Dashes />
+
+function renderCell(id: string, r: StyleTestRow): React.ReactNode {
+  switch (id) {
+    case "date":
+      return <CellDate>{formatDateTime(r.submittedAt)}</CellDate>
+    case "name":
+      return <strong>{hasText(r.nombre) ? r.nombre : "—"}</strong>
+    case "lastname":
+      return <TextOrDash value={r.apellido} />
+    case "email":
+      return <CellNowrap $secondary>{r.email || "—"}</CellNowrap>
+    case "gender":
+      return hasText(r.genero) ? <Chip value={r.genero} /> : <Dashes />
+    case "location":
+      return <TextOrDash value={r.ubicacion} />
+    case "place":
+      return <TextOrDash value={r.place} />
+    case "personality":
+      return (
+        <ChipsWrap>
+          {r.personalidad.map((p) => (
+            <Chip key={p} value={p} />
+          ))}
+        </ChipsWrap>
+      )
+    case "characteristics":
+      return (
+        <CellText>
+          {hasText(r.caracteristicas) ? r.caracteristicas.replace(/\n/g, " · ") : "—"}
+        </CellText>
+      )
+    case "time":
+      return hasText(r.tiempo) ? <Chip value={r.tiempo} variant="subtle" /> : <Dashes />
+    case "fit":
+      return hasText(r.fit) ? <Chip value={r.fit} variant="subtle" /> : <Dashes />
+    case "results":
+      return (
+        <ChipsWrap>
+          {r.results.map((res) => (
+            <Chip key={res} value={res} />
+          ))}
+        </ChipsWrap>
+      )
+    case "sugerencia":
+      return <CellText>{hasText(r.sugerencia) ? r.sugerencia : "—"}</CellText>
+    case "comms":
+      return <CheckCell yes={r.comunicaciones} />
+    case "dataproc":
+      return <CheckCell yes={r.procesamiento} />
+    case "iplocation":
+      return <TextOrDash value={r.ipLocation} />
+    case "source":
+      return (
+        <Chip value={r.source} variant={r.source === "app" ? "source-app" : "source-notion"} />
+      )
+    default:
+      return null
+  }
+}
 
 interface PaginationProps {
   page: number
@@ -232,7 +334,7 @@ export const AdminStyleTest: React.FC = () => {
   const [limit, setLimit] = useState<number>(PAGE_SIZES[0])
 
   // UI state
-  const [visible, setVisible] = useState<ColumnVisibility>(loadVisibility)
+  const [colsConfig, setColsConfig] = useState<ColumnsConfig>(loadColsConfig)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [exporting, setExporting] = useState(false)
   const [exportError, setExportError] = useState<string | null>(null)
@@ -326,17 +428,45 @@ export const AdminStyleTest: React.FC = () => {
     resetPage()
   }
 
-  const toggleColumn = (id: string, value: boolean) => {
-    const next = { ...visible, [id]: value }
-    setVisible(next)
-    saveVisibility(next)
+  const updateColsConfig = (next: ColumnsConfig) => {
+    setColsConfig(next)
+    saveColsConfig(next)
   }
 
-  const resetColumns = () => {
-    const next = defaultVisibility()
-    setVisible(next)
-    saveVisibility(next)
-  }
+  const toggleColumn = (id: string, value: boolean) =>
+    updateColsConfig({ ...colsConfig, visible: { ...colsConfig.visible, [id]: value } })
+
+  const reorderColumns = (order: string[]) => updateColsConfig({ ...colsConfig, order })
+
+  // Default order AND everything visible again.
+  const resetColumns = () => updateColsConfig(defaultConfig())
+
+  // Columns in display order (menu) and the visible subset (table header + body).
+  const orderedCols = useMemo(
+    () => colsConfig.order.map((id) => COLS_BY_ID[id]).filter(Boolean),
+    [colsConfig.order]
+  )
+  const visibleCols = useMemo(
+    () => orderedCols.filter((c) => colsConfig.visible[c.id] !== false),
+    [orderedCols, colsConfig.visible]
+  )
+
+  // Sticky Nombre/Apellido: `left` is computed here (inline style) from the sticky columns
+  // that are currently visible, in display order: the first sits at 0, the next at
+  // STICKY_COL_WIDTH. So hiding Nombre moves Apellido to 0, and hiding both drops stickiness.
+  // The last sticky column gets `is-sticky-last` (right border separating it from the scroll).
+  const { stickyLeft, lastStickyId } = useMemo(() => {
+    const left: Record<string, number> = {}
+    let count = 0
+    let last: string | null = null
+    for (const c of visibleCols) {
+      if (!STICKY_IDS.includes(c.id)) continue
+      left[c.id] = count * STICKY_COL_WIDTH
+      count += 1
+      last = c.id
+    }
+    return { stickyLeft: left, lastStickyId: last }
+  }, [visibleCols])
 
   const handleExport = async () => {
     setExporting(true)
@@ -363,10 +493,18 @@ export const AdminStyleTest: React.FC = () => {
     }
   }
 
-  const colProps = (id: string) => ({
-    "data-col": id,
-    className: visible[id] === false ? "is-hidden" : undefined,
-  })
+  const cellProps = (id: string, extraClass = "") => {
+    const left = stickyLeft[id]
+    const className = [extraClass, id === lastStickyId ? "is-sticky-last" : ""]
+      .filter(Boolean)
+      .join(" ")
+    return {
+      "data-col": id,
+      "data-sticky": left !== undefined ? "" : undefined,
+      className: className || undefined,
+      style: left !== undefined ? { left } : undefined,
+    }
+  }
 
   const renderSortIcon = (col: string) => {
     if (sort.col !== col) return <SortNeutralIcon size={12} />
@@ -493,9 +631,10 @@ export const AdminStyleTest: React.FC = () => {
         </Select>
 
         <ColumnsMenu
-          columns={COLS}
-          visible={visible}
+          columns={orderedCols}
+          visible={colsConfig.visible}
           onToggle={toggleColumn}
+          onReorder={reorderColumns}
           onReset={resetColumns}
         />
 
@@ -512,20 +651,15 @@ export const AdminStyleTest: React.FC = () => {
           <DataTable>
             <thead>
               <tr>
-                {COLS.map((c) => {
+                {visibleCols.map((c) => {
                   const sorted = sort.col === c.id
-                  const classes = [
-                    c.sortable ? "sortable" : "",
-                    sorted ? "is-sorted" : "",
-                    visible[c.id] === false ? "is-hidden" : "",
-                  ]
+                  const classes = [c.sortable ? "sortable" : "", sorted ? "is-sorted" : ""]
                     .filter(Boolean)
                     .join(" ")
                   return (
                     <th
                       key={c.id}
-                      data-col={c.id}
-                      className={classes || undefined}
+                      {...cellProps(c.id, classes)}
                       aria-sort={
                         sorted ? (sort.dir === "asc" ? "ascending" : "descending") : undefined
                       }
@@ -565,70 +699,11 @@ export const AdminStyleTest: React.FC = () => {
                     }
                   }}
                 >
-                  <td {...colProps("date")}>
-                    <CellDate>{formatDateTime(r.submittedAt)}</CellDate>
-                  </td>
-                  <td {...colProps("name")}>
-                    <strong>{hasText(r.nombre) ? r.nombre : "—"}</strong>
-                  </td>
-                  <td {...colProps("lastname")}>
-                    <TextOrDash value={r.apellido} />
-                  </td>
-                  <td {...colProps("email")}>
-                    <CellNowrap $secondary>{r.email || "—"}</CellNowrap>
-                  </td>
-                  <td {...colProps("gender")}>
-                    {hasText(r.genero) ? <Chip value={r.genero} /> : <Dashes />}
-                  </td>
-                  <td {...colProps("location")}>
-                    <TextOrDash value={r.ubicacion} />
-                  </td>
-                  <td {...colProps("place")}>
-                    <TextOrDash value={r.place} />
-                  </td>
-                  <td {...colProps("personality")}>
-                    <ChipsWrap>
-                      {r.personalidad.map((p) => (
-                        <Chip key={p} value={p} />
-                      ))}
-                    </ChipsWrap>
-                  </td>
-                  <td {...colProps("characteristics")}>
-                    <CellText>
-                      {hasText(r.caracteristicas) ? r.caracteristicas.replace(/\n/g, " · ") : "—"}
-                    </CellText>
-                  </td>
-                  <td {...colProps("time")}>
-                    {hasText(r.tiempo) ? <Chip value={r.tiempo} variant="subtle" /> : <Dashes />}
-                  </td>
-                  <td {...colProps("fit")}>
-                    {hasText(r.fit) ? <Chip value={r.fit} variant="subtle" /> : <Dashes />}
-                  </td>
-                  <td {...colProps("results")}>
-                    <ChipsWrap>
-                      {r.results.map((res) => (
-                        <Chip key={res} value={res} />
-                      ))}
-                    </ChipsWrap>
-                  </td>
-                  <td {...colProps("sugerencia")}>
-                    <CellText>{hasText(r.sugerencia) ? r.sugerencia : "—"}</CellText>
-                  </td>
-                  <td {...colProps("comms")}>
-                    <CheckCell yes={r.comunicaciones} />
-                  </td>
-                  <td {...colProps("dataproc")}>
-                    <CheckCell yes={r.procesamiento} />
-                  </td>
-                  <td {...colProps("iplocation")}>
-                    <TextOrDash value={r.ipLocation} />
-                  </td>
-                  <td {...colProps("source")}>
-                    <Chip
-                      value={r.source}
-                      variant={r.source === "app" ? "source-app" : "source-notion"}
-                    />
-                  </td>
+                  {visibleCols.map((c) => (
+                    <td key={c.id} {...cellProps(c.id)}>
+                      {renderCell(c.id, r)}
+                    </td>
+                  ))}
                 </tr>
               ))}
             </tbody>

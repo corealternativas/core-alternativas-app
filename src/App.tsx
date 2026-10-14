@@ -12,6 +12,7 @@ import { Admin } from "./pages/Admin"
 import { AdminResults } from "./pages/AdminResults"
 import { AdminStyleTest } from "./pages/AdminStyleTest"
 import { StyleTest } from "./pages/StyleTest"
+import { StyleTestResults } from "./pages/StyleTestResults"
 import { StyledLayout, StyledMain } from "./App.style"
 
 // Layout for the calculator + admin area: header (with auth nav) + footer.
@@ -30,6 +31,9 @@ function App() {
         <Routes>
           {/* Public: style test renders its own header/footer inside StepByStepForm */}
           <Route path="/style-test" element={<StyleTest />} />
+
+          {/* Public: shareable results page for one submission (no auth, no AppLayout) */}
+          <Route path="/style-test/results/:id" element={<StyleTestResults />} />
 
           {/* Root redirects based on session (user/admin/none) */}
           <Route path="/" element={<RootRedirect />} />

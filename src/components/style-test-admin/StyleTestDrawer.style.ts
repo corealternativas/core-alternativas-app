@@ -273,3 +273,67 @@ export const NotionStatus = styled.span<{ $ok: boolean }>`
   font-weight: 500;
   color: ${({ $ok }) => ($ok ? "var(--success)" : "var(--warn)")};
 `
+
+export const ShareRow = styled.div`
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+`
+
+export const ShareInput = styled.input`
+  flex: 1;
+  min-width: 0;
+  padding: 9px 12px;
+  border: 1px solid ${({ theme }) => theme.colors.border};
+  border-radius: 6px;
+  background: var(--surface-soft);
+  color: ${({ theme }) => theme.colors.text};
+  font-family: var(--font-mono);
+  font-size: 12px;
+  text-overflow: ellipsis;
+
+  &:focus {
+    outline: none;
+    border-color: ${({ theme }) => theme.colors.primary};
+    box-shadow: var(--focus-ring);
+  }
+`
+
+export const CopyButton = styled.button<{ $done?: boolean }>`
+  flex-shrink: 0;
+  min-width: 96px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  border-radius: 6px;
+  border: 1px solid
+    ${({ $done, theme }) => ($done ? "var(--success)" : theme.colors.primary)};
+  background: ${({ $done, theme }) => ($done ? "var(--chip-app-bg)" : theme.colors.primary)};
+  color: ${({ $done, theme }) => ($done ? "var(--success)" : theme.colors.white)};
+  font-family: inherit;
+  font-size: 13.5px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+
+  &:hover:not(:disabled) {
+    ${({ $done }) => ($done ? "" : "background: var(--accent-ink); border-color: var(--accent-ink);")}
+  }
+
+  &:focus {
+    outline: none;
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.colors.primary};
+    outline-offset: 2px;
+  }
+`
+
+export const ShareHint = styled.p`
+  margin: 8px 0 0;
+  font-size: 12px;
+  color: var(--text-muted);
+`

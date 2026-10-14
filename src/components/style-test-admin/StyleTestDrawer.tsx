@@ -35,6 +35,10 @@ import {
   Optin,
   Metadata,
   NotionStatus,
+  ShareRow,
+  ShareInput,
+  CopyButton,
+  ShareHint,
 } from "./StyleTestDrawer.style"
 
 interface StyleTestDrawerProps {
@@ -48,6 +52,38 @@ interface StyleTestDrawerProps {
 }
 
 const dash = "—"
+const COPIED_FEEDBACK_MS = 1800
+
+// Clipboard API when available (needs a secure context); otherwise a throwaway
+// textarea + execCommand("copy"). Returns whether the text was copied.
+async function copyText(text: string): Promise<boolean> {
+  if (navigator.clipboard?.writeText) {
+    try {
+      await navigator.clipboard.writeText(text)
+      return true
+    } catch {
+      /* permission denied or insecure context: use the fallback */
+    }
+  }
+  const previouslyFocused = document.activeElement as HTMLElement | null
+  const ta = document.createElement("textarea")
+  ta.value = text
+  ta.setAttribute("readonly", "")
+  ta.style.position = "fixed"
+  ta.style.top = "0"
+  ta.style.left = "-9999px"
+  document.body.appendChild(ta)
+  ta.select()
+  let ok = false
+  try {
+    ok = document.execCommand("copy")
+  } catch {
+    ok = false
+  }
+  ta.remove()
+  previouslyFocused?.focus?.({ preventScroll: true })
+  return ok
+}
 
 export const StyleTestDrawer: React.FC<StyleTestDrawerProps> = ({
   row,
@@ -64,6 +100,13 @@ export const StyleTestDrawer: React.FC<StyleTestDrawerProps> = ({
   if (row && row !== shown) setShown(row)
 
   const closeRef = useRef<HTMLButtonElement>(null)
+  const shareInputRef = useRef<HTMLInputElement>(null)
+
+  // "¡Copiado!" feedback is tied to the row id, so it never leaks onto another row
+  // when navigating with prev/next.
+  const [copiedId, setCopiedId] = useState<string | null>(null)
+  const copiedTimer = useRef<number | undefined>(undefined)
+  useEffect(() => () => window.clearTimeout(copiedTimer.current), [])
 
   // Move focus into the drawer on open, give it back on close.
   useEffect(() => {
@@ -85,6 +128,21 @@ export const StyleTestDrawer: React.FC<StyleTestDrawerProps> = ({
   const r = shown
   const name = r ? fullName(r.nombre, r.apellido) : ""
   const initial = ((r?.nombre ?? r?.email ?? "?").trim().charAt(0) || "?").toUpperCase()
+  const shareUrl = r ? `${window.location.origin}/style-test/results/${r.id}` : ""
+
+  const handleCopy = async () => {
+    if (!r) return
+    const ok = await copyText(shareUrl)
+    if (!ok) {
+      // Nothing was copied: select the URL so the user can copy it by hand.
+      shareInputRef.current?.focus()
+      shareInputRef.current?.select()
+      return
+    }
+    setCopiedId(r.id)
+    window.clearTimeout(copiedTimer.current)
+    copiedTimer.current = window.setTimeout(() => setCopiedId(null), COPIED_FEEDBACK_MS)
+  }
 
   return (
     <>
@@ -154,6 +212,33 @@ export const StyleTestDrawer: React.FC<StyleTestDrawerProps> = ({
 
         {r && (
           <DrawerBody>
+            <Section>
+              <SectionHeading>Link para compartir</SectionHeading>
+              <ShareRow>
+                <ShareInput
+                  ref={shareInputRef}
+                  type="text"
+                  readOnly
+                  value={shareUrl}
+                  aria-label="Link para compartir"
+                  onClick={(e) => e.currentTarget.select()}
+                  onFocus={(e) => e.currentTarget.select()}
+                />
+                <CopyButton type="button" $done={copiedId === r.id} onClick={handleCopy}>
+                  {copiedId === r.id ? (
+                    <>
+                      <CheckIcon size={14} strokeWidth={3} /> ¡Copiado!
+                    </>
+                  ) : (
+                    "Copiar"
+                  )}
+                </CopyButton>
+              </ShareRow>
+              <ShareHint>
+                Página pública con los resultados de esta persona (sin email ni datos internos).
+              </ShareHint>
+            </Section>
+
             <Section>
               <SectionHeading>Características</SectionHeading>
               {hasText(r.caracteristicas) ? (

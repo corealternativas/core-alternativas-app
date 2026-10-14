@@ -7,7 +7,6 @@ import {
   StyledHeaderContent,
   StyledLogoWrapper,
   StyledLogo,
-  StyledTitle,
   StyledNav,
   StyledNavLink,
   StyledNavDivider,
@@ -26,10 +25,6 @@ import {
   StyledMobileUserInfo,
   StyledMobileItem,
 } from "./Header.style"
-
-interface HeaderProps {
-  title?: string
-}
 
 const MenuIcon: React.FC<{ open: boolean }> = ({ open }) => (
   <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -121,9 +116,7 @@ const ProfileMenu: React.FC<ProfileMenuProps> = ({ name, onChangePassword, onLog
   )
 }
 
-export const Header: React.FC<HeaderProps> = ({
-  title = "Calculadora semana de uso de ropa",
-}) => {
+export const Header: React.FC = () => {
   const { user, logout } = useAuth()
   const navigate = useNavigate()
   const location = useLocation()
@@ -182,7 +175,6 @@ export const Header: React.FC<HeaderProps> = ({
               <StyledLogo src="/coreLogo.webp" alt="CORE" />
             </Link>
           </StyledLogoWrapper>
-          <StyledTitle>{title}</StyledTitle>
         </StyledTitleWrapper>
 
         {user && (
@@ -190,8 +182,8 @@ export const Header: React.FC<HeaderProps> = ({
             <StyledNav>
               {user.role === "admin" && (
                 <>
-                  <StyledNavLink to="/admin/results">Resultados</StyledNavLink>
-                  <StyledNavLink to="/admin/style-test">Style test results</StyledNavLink>
+                  <StyledNavLink to="/admin/results">Resultados de calculadora</StyledNavLink>
+                  <StyledNavLink to="/admin/style-test">Resultados test de estilo</StyledNavLink>
                   <StyledNavLink to="/admin/users">Usuarios</StyledNavLink>
                 </>
               )}
@@ -223,10 +215,10 @@ export const Header: React.FC<HeaderProps> = ({
             {user.role === "admin" && (
               <>
                 <StyledMobileItem as={Link} to="/admin/results" role="menuitem">
-                  Resultados
+                  Resultados de calculadora
                 </StyledMobileItem>
                 <StyledMobileItem as={Link} to="/admin/style-test" role="menuitem">
-                  Style test results
+                  Resultados test de estilo
                 </StyledMobileItem>
                 <StyledMobileItem as={Link} to="/admin/users" role="menuitem">
                   Usuarios

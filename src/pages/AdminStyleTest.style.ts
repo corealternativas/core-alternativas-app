@@ -1,5 +1,9 @@
 import styled from "styled-components"
 
+// Width of each sticky identity column (Nombre / Apellido). Fixed (min = max) so the
+// JS-computed `left` offset of the second sticky column always matches the first one.
+export const STICKY_COL_WIDTH = 150
+
 const SELECT_CHEVRON = `url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%236b6760' stroke-width='2'><polyline points='6 9 12 15 18 9'/></svg>")`
 
 export const Container = styled.div`
@@ -232,7 +236,9 @@ export const DataTable = styled.table`
   /* 17 columns: keep every column at its natural width and let TableScroll
      scroll horizontally, instead of squeezing chip/text cells into tall rows. */
   min-width: max-content;
-  border-collapse: collapse;
+  /* "separate" (not "collapse") so borders travel with sticky cells while scrolling. */
+  border-collapse: separate;
+  border-spacing: 0;
   font-size: 13.5px;
 
   th {
@@ -247,6 +253,7 @@ export const DataTable = styled.table`
     border-bottom: 1px solid ${({ theme }) => theme.colors.border};
     white-space: nowrap;
     user-select: none;
+    vertical-align: middle;
   }
 
   th.sortable {
@@ -284,7 +291,7 @@ export const DataTable = styled.table`
   td {
     padding: 12px 14px;
     border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-    vertical-align: top;
+    vertical-align: middle;
   }
 
   tbody tr {
@@ -302,6 +309,10 @@ export const DataTable = styled.table`
 
   tbody tr.is-selected {
     background: var(--accent-soft);
+  }
+
+  /* Marker on the first cell (not the <tr>) so sticky cells can't cover it. */
+  tbody tr.is-selected td:first-child {
     box-shadow: inset 3px 0 0 ${({ theme }) => theme.colors.primary};
   }
 
@@ -309,9 +320,40 @@ export const DataTable = styled.table`
     border-bottom: none;
   }
 
-  th.is-hidden,
-  td.is-hidden {
-    display: none;
+  /* Sticky identity columns (Nombre / Apellido). "left" is set inline from the page. */
+  th[data-sticky],
+  td[data-sticky] {
+    position: sticky;
+    width: ${STICKY_COL_WIDTH}px;
+    min-width: ${STICKY_COL_WIDTH}px;
+    max-width: ${STICKY_COL_WIDTH}px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* Header cells sit one layer above body cells so they win at the scroll edge. */
+  th[data-sticky] {
+    z-index: 3;
+  }
+
+  /* Opaque, otherwise the cells scrolling underneath bleed through. */
+  td[data-sticky] {
+    z-index: 2;
+    background: ${({ theme }) => theme.colors.white};
+  }
+
+  tbody tr:hover td[data-sticky] {
+    background: var(--surface-soft);
+  }
+
+  tbody tr.is-selected td[data-sticky] {
+    background: var(--accent-soft);
+  }
+
+  th.is-sticky-last,
+  td.is-sticky-last {
+    border-right: 1px solid ${({ theme }) => theme.colors.border};
   }
 `
 
