@@ -4,16 +4,18 @@ import { NavLink } from "react-router-dom"
 export const StyledHeader = styled.header`
   background-color: ${({ theme }) => theme.colors.white};
   border-bottom: 1px solid ${({ theme }) => theme.colors.border};
-  padding: ${({ theme }) => theme.spacing.md};
+  /* No padding-bottom on desktop so the nav sits right on the separator. */
+  padding: ${({ theme }) => theme.spacing.md} ${({ theme }) => theme.spacing.md} 0;
   display: flex;
   justify-content: center;
-  align-items: center;
+  align-items: stretch;
   position: sticky;
   top: 0;
   z-index: 100;
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
     padding: 0.6rem ${({ theme }) => theme.spacing.sm};
+    align-items: center;
   }
 `
 
@@ -21,12 +23,13 @@ export const StyledHeaderContent = styled.div`
   width: 85%;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-end;
   gap: ${({ theme }) => theme.spacing.lg};
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
     width: 100%;
     gap: ${({ theme }) => theme.spacing.sm};
+    align-items: center;
   }
 `
 
@@ -36,9 +39,13 @@ export const StyledTitleWrapper = styled.div`
   gap: ${({ theme }) => theme.spacing.lg};
   min-width: 0;
   flex: 1;
+  /* Logo stays vertically centered against the taller header; only the
+     right-side nav + profile sit on the bottom separator. */
+  align-self: center;
 
   @media (max-width: ${({ theme }) => theme.breakpoints.tablet}) {
     gap: ${({ theme }) => theme.spacing.sm};
+    align-self: auto;
   }
 `
 
@@ -63,7 +70,7 @@ export const StyledLogoWrapper = styled.div`
 `
 
 export const StyledLogo = styled.img`
-  height: 48px;
+  height: 90px;
   width: auto;
   object-fit: contain;
 
