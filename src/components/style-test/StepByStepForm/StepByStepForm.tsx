@@ -348,6 +348,16 @@ export const StepByStepForm: React.FC = () => {
         throw new Error(err.message || "Error al enviar el email");
       }
 
+      // The backend returns the submission UUID so we can jump straight to
+      // the public results page the client will keep as their "copy".
+      const submissionId = (response.data as { id?: string } | null)?.id;
+      if (submissionId) {
+        window.location.href = `/style-test/results/${submissionId}`;
+        return;
+      }
+
+      // Defensive fallback: if the server didn't hand back an id, keep the
+      // old success + 5s countdown behaviour so the UX never gets stuck.
       setCurrentStep(SUCCESS_STEP);
       setRedirectCountdown(5);
     } catch (error) {
