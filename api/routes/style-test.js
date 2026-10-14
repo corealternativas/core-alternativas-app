@@ -19,10 +19,15 @@ function createTransporter() {
   if (!user || !pass) {
     throw new Error('Missing GMAIL_USER or GMAIL_APP_PASSWORD in environment.')
   }
-  // Explicit timeouts so a stuck SMTP connection fails in seconds, not minutes.
-  // Nodemailer defaults are permissive and will happily hang on a blocked port.
+  // Use port 587 + STARTTLS explicitly instead of `service: 'gmail'` (which
+  // defaults to 465 SMTPS). Railway tends to block outbound 465 but may let
+  // 587 through, so this is worth trying before falling back to an HTTP email
+  // provider. Explicit timeouts keep a blocked socket from hanging the worker.
   return nodemailer.createTransport({
-    service: 'gmail',
+    host: 'smtp.gmail.com',
+    port: 587,
+    secure: false,
+    requireTLS: true,
     auth: { user, pass },
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
