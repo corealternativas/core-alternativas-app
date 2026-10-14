@@ -2,8 +2,7 @@ import React, { useEffect, useMemo, useState } from "react"
 import { useParams } from "react-router-dom"
 import { Chip } from "../components/style-test-admin/Chip"
 import { hasText } from "../components/style-test-admin/format"
-import { arquetipos, estilos, imgUrls } from "../utils/style-test/styleData"
-import { driveToEmbedUrl } from "../utils/style-test/emailHelpers"
+import { arquetipos, estilos, imgLocalUrls } from "../utils/style-test/styleData"
 import {
   Page,
   PageHeader,
@@ -378,7 +377,7 @@ const ArchetypeCard: React.FC<{ rank: number; name: string }> = ({ rank, name })
   const [failed, setFailed] = useState(false)
   const key = NAME_TO_KEY[name]
   const href = key ? estilos[key] : null
-  const img = key ? driveToEmbedUrl(imgUrls[key]) : ""
+  const img = key ? imgLocalUrls[key] : ""
 
   const inner = (
     <>

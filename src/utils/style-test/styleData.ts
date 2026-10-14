@@ -26,6 +26,21 @@ export const imgUrls = {
   eclecticoArtistico: "https://drive.google.com/file/d/13c2cX6CkKnmjs-fLVduxLNxhx_z5Ihrv/view?usp=sharing",
 };
 
+// Local copies served from /public/archetypes/. Browsers block Google Drive
+// hotlinking from arbitrary origins, so the results page uses these instead.
+export const imgLocalUrls = {
+  rockAndRoll:        "/archetypes/rock-and-roll.png",
+  basicoMinimalista:  "/archetypes/minimalista.png",
+  romanticoFemme:     "/archetypes/romantico-femme.png",
+  bohemioOrganico:    "/archetypes/bohemio-organico.png",
+  clasicoElegante:    "/archetypes/clasico-elegante.png",
+  deportivoUrbano:    "/archetypes/deportivo-urbano.png",
+  vintageRetro:       "/archetypes/vintage-retro.png",
+  gotico:             "/archetypes/gotico.png",
+  aventurerx:         "/archetypes/aventurerx.png",
+  eclecticoArtistico: "/archetypes/eclectico-artistico.png",
+};
+
 export const estilosAdjetivos = {
   rockAndRoll: ["Rebelde", "Audaz", "Edgy", "Alternativa/o/e", "Intensa/o/e"],
   basicoMinimalista: ["Simple", "Moderna/o/e", "Relajada/o/e"],
