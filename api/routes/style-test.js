@@ -19,9 +19,14 @@ function createTransporter() {
   if (!user || !pass) {
     throw new Error('Missing GMAIL_USER or GMAIL_APP_PASSWORD in environment.')
   }
+  // Explicit timeouts so a stuck SMTP connection fails in seconds, not minutes.
+  // Nodemailer defaults are permissive and will happily hang on a blocked port.
   return nodemailer.createTransport({
     service: 'gmail',
     auth: { user, pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 15_000,
   })
 }
 
@@ -86,7 +91,9 @@ async function saveToNotion(data) {
   })
 }
 
-async function persistSubmission({ formData, messageId, notionSaved, notionError }) {
+// Writes the submission row and returns its id. Called synchronously so the
+// shareable UUID can be handed back to the client immediately.
+async function persistSubmission({ formData }) {
   const {
     nombre = null,
     apellido = null,
@@ -105,19 +112,18 @@ async function persistSubmission({ formData, messageId, notionSaved, notionError
     procesamiento = false,
   } = formData || {}
 
-  await query(
+  const { rows } = await query(
     `
     INSERT INTO style_test_submissions (
       nombre, apellido, email, genero, ubicacion, ip_location, place, fit,
       personalidad, caracteristicas, tiempo, sugerencia, results,
-      comunicaciones, procesamiento, payload, email_message_id,
-      notion_saved, notion_error, source, submitted_at
+      comunicaciones, procesamiento, payload, source, submitted_at
     ) VALUES (
       $1, $2, $3, $4, $5, $6, $7, $8,
       $9::jsonb, $10, $11, $12, $13::jsonb,
-      $14, $15, $16::jsonb, $17,
-      $18, $19, 'app', now()
+      $14, $15, $16::jsonb, 'app', now()
     )
+    RETURNING id
     `,
     [
       nombre,
@@ -136,15 +142,63 @@ async function persistSubmission({ formData, messageId, notionSaved, notionError
       Boolean(comunicaciones),
       Boolean(procesamiento),
       JSON.stringify(formData || {}),
-      messageId || null,
-      Boolean(notionSaved),
-      notionError || null,
     ]
   )
+  return rows[0].id
+}
+
+// Updates the row with the outcome of the background email + Notion calls.
+async function updateSubmissionStatus(id, { messageId, notionSaved, notionError }) {
+  await query(
+    `UPDATE style_test_submissions
+     SET email_message_id = $2, notion_saved = $3, notion_error = $4
+     WHERE id = $1`,
+    [id, messageId || null, Boolean(notionSaved), notionError || null]
+  )
+}
+
+// Fires both outbound calls in parallel without blocking the HTTP response.
+// Errors are logged (never thrown) so the submission stays in DB even when
+// the email provider or Notion is down.
+async function processSubmissionBackground({ submissionId, formData, emailArgs }) {
+  const [emailResult, notionResult] = await Promise.allSettled([
+    sendEmail(emailArgs),
+    saveToNotion(formData),
+  ])
+
+  let messageId = null
+  let notionSaved = false
+  let notionError = null
+
+  if (emailResult.status === 'fulfilled') {
+    messageId = emailResult.value.messageId
+  } else {
+    const err = emailResult.reason
+    const msg = err instanceof Error ? err.message : String(err)
+    const code = err?.code ? ` (${err.code})` : ''
+    console.error(`[style-test] email failed for ${submissionId}:${code} ${msg}`)
+  }
+
+  if (notionResult.status === 'fulfilled') {
+    notionSaved = true
+  } else {
+    const err = notionResult.reason
+    notionError = err instanceof Error ? err.message : String(err)
+    console.error(`[style-test] Notion save failed for ${submissionId}:`, notionError)
+  }
+
+  try {
+    await updateSubmissionStatus(submissionId, { messageId, notionSaved, notionError })
+  } catch (err) {
+    console.error(`[style-test] failed to persist status for ${submissionId}:`, err)
+  }
 }
 
 // POST /api/style-test/submit
 // Body: { to, subject?, html, text?, replyTo?, formData }
+// The DB write runs synchronously so we can hand back the shareable id. Email
+// (nodemailer / Gmail) and the Notion mirror are fired-and-forgotten after the
+// response — a slow or dead SMTP endpoint used to hang the request for 2 min.
 router.post('/submit', async (req, res) => {
   const { to, subject, html, text, replyTo, formData } = req.body || {}
 
@@ -158,43 +212,29 @@ router.post('/submit', async (req, res) => {
     return res.status(400).json({ error: 'Missing "formData"' })
   }
 
-  let messageId = null
+  let submissionId
   try {
-    const emailResult = await sendEmail({
-      to: to.trim(),
-      subject: subject != null ? String(subject) : 'No subject',
-      html: String(html),
-      text: text != null ? String(text) : undefined,
-      replyTo: replyTo != null ? String(replyTo).trim() : undefined,
-    })
-    messageId = emailResult.messageId
-  } catch (err) {
-    const errorMessage = err instanceof Error ? err.message : String(err)
-    return res.status(500).json({ error: `Failed to send email: ${errorMessage}` })
-  }
-
-  let notionSaved = false
-  let notionError = null
-  try {
-    await saveToNotion(formData)
-    notionSaved = true
-  } catch (err) {
-    notionError = err instanceof Error ? err.message : String(err)
-    console.error('[style-test] Notion save failed:', notionError)
-  }
-
-  try {
-    await persistSubmission({ formData, messageId, notionSaved, notionError })
+    submissionId = await persistSubmission({ formData })
   } catch (err) {
     console.error('[style-test] DB persist failed:', err)
-    // Do not fail the request: the email already went out.
+    return res.status(500).json({ error: 'Failed to save your submission. Please try again.' })
   }
 
-  return res.json({
+  res.json({
     success: true,
-    messageId,
-    notionSaved,
-    notionError,
+    id: submissionId,
+    async: true,
+  })
+
+  const emailArgs = {
+    to: to.trim(),
+    subject: subject != null ? String(subject) : 'No subject',
+    html: String(html),
+    text: text != null ? String(text) : undefined,
+    replyTo: replyTo != null ? String(replyTo).trim() : undefined,
+  }
+  processSubmissionBackground({ submissionId, formData, emailArgs }).catch((err) => {
+    console.error(`[style-test] background task threw for ${submissionId}:`, err)
   })
 })
 
